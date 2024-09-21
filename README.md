@@ -22,6 +22,12 @@ cp .env.example .env
 ./vendor/bin/sail artisan migrate
 ```
 
+## 執行測試
+
+```bash
+./vendor/bin/sail artisan test --coverage
+```
+
 ## 執行範例
 
 ### 新增訂單
