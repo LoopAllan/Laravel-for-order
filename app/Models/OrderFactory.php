@@ -4,7 +4,7 @@ namespace App\Models;
 use App;
 use App\Services\CurrencyServiceInterface;
 
-class OrderFactory
+class OrderFactory implements OrderFactoryInterface
 {
     protected $currencyService;
 

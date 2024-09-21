@@ -2,13 +2,13 @@
 namespace App\Listeners;
 
 use App\Events\OrderCreated;
-use App\Models\OrderFactory;
+use App\Models\OrderFactoryInterface;
 use Illuminate\Support\Facades\Log;
 
 class ProcessOrder
 {
     protected $orderFactory;
-    public function __construct(OrderFactory $orderFactory) 
+    public function __construct(OrderFactoryInterface $orderFactory) 
     {
         $this->orderFactory = $orderFactory;
     }

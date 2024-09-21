@@ -4,7 +4,7 @@ namespace App\Http\Controllers\api;
 use App\Events\OrderCreated;
 use App\Http\Requests\OrderRequest;
 use App\Http\Resources\OrderResource;
-use App\Models\OrderFactory;
+use App\Models\OrderFactoryInterface;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 
@@ -12,7 +12,7 @@ class OrderController extends Controller
 {
     protected $orderFactory;
 
-    public function __construct(OrderFactory $orderFactory) 
+    public function __construct(OrderFactoryInterface $orderFactory) 
     {
         $this->orderFactory = $orderFactory;
     }
