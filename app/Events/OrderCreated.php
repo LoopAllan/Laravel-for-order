@@ -1,16 +1,14 @@
 <?php
 namespace App\Events;
-
 use Illuminate\Foundation\Events\Dispatchable;
+
 
 class OrderCreated
 {
     use Dispatchable;
-
-    public $orderData;
-
+    public $data;
     public function __construct(array $orderData)
     {
-        $this->orderData = $orderData;
+        $this->data = $orderData;
     }
 }

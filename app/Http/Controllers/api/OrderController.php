@@ -3,20 +3,44 @@ namespace App\Http\Controllers\api;
 
 use App\Events\OrderCreated;
 use App\Http\Requests\OrderRequest;
+use App\Http\Resources\OrderResource;
+use App\Models\OrderFactory;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    protected $orderFactory;
+
+    public function __construct(OrderFactory $orderFactory) 
+    {
+        $this->orderFactory = $orderFactory;
+    }
+
     public function store(OrderRequest $request)
     {
-        event(new OrderCreated($request->validated()));
-        return response()->json(['message' => 'Order received'], Response::HTTP_OK);
+        $validated = $request->validated();
+        event(new OrderCreated($validated), ["asd"]);
+        return response()->noContent(Response::HTTP_OK);
     }
 
     public function show($id)
     {
-        // 根據不同的貨幣查詢對應的資料表
-        // 此處省略具體實作
-        echo $id;
+        try {
+            $model = $this->orderFactory->create_by_id($id);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Order not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $orderDetails = $model->where('order_id', $id)->first();
+
+        if (!$orderDetails) {
+            return response()->json(['message' => 'Order details not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $currency = strtoupper(explode("_", $model->getTable())[1]);
+        $orderDetails->currency = $currency;
+
+        return new OrderResource($orderDetails, Response::HTTP_OK);
     }
 }
