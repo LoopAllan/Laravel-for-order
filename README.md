@@ -1,66 +1,107 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+[[_TOC_]]
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# 使用說明
 
-## About Laravel
+## 環境建置
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```bash
+composer install
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+cp .env.example .env
+```
 
-## Learning Laravel
+```bash
+./vendor/bin/sail up -d; 
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+幾秒後再執行
+```bash
+./vendor/bin/sail artisan migrate
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 執行範例
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 新增訂單
 
-## Laravel Sponsors
+```bash
+curl 'http://127.0.0.1:8080/orders' \
+-H 'Content-Type:application/json' \
+-d '{
+    "id": "A0000001",
+    "name": "Melody Holiday Inn2",
+    "address": {
+        "city": "taipei-city",
+        "district": "da-an-district",
+        "street": "fuxing-south-road"
+    },
+    "price": "20067",
+    "currency": "JPY"
+}'
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 查詢訂單
 
-### Premium Partners
+```bash
+curl 'http://127.0.0.1:8080/orders/A0000001'
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+# 設計模式
 
-## Contributing
+- 依賴注入模式：於 Controller、ProcessOrder 等類裡面在需要使用實體的地方使用依賴注入來實現
+- 工廠模式：使用 OrderFactory 根據幣別判斷產出對應的模型
+- 觀察者模式：當 OrderCreated 事件觸發，ProcessOrder 自動觸發處理訂單建立的邏輯
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# SOLID 原則
 
-## Code of Conduct
+## SRP
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+模型
+- Model/OrderTWD, Model/OrderUSD 等等的 Models 只針對各自幣別的訂單資料表做操作
+- Model/OrderCurrency 只針對 order_currency 訂單編號對應幣別的資料表做操作
 
-## Security Vulnerabilities
+控制器
+- OrderController 只負責處理訂單的 HTTP 請求，不包含業務邏輯及數據訪問邏輯
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+請求驗證
+- OrderRequest 只針對訂單請求時的數據格式驗證
 
-## License
+事件和監聽器
+- OrderCreated 訂單成立的事件，僅包含訂單的相關資訊
+- ProcessOrder 專門處理由 OrderCreated 事件觸發後的訂單建立業務邏輯
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+服務類
+- CurrencyService 處理幣別相關的操作，如獲取幣別列表、驗證幣別是否支援
+
+工廠類
+- OrderFactory 負責產出訂單相關的資料模型
+
+## OCP
+
+服務類
+- CurrencyService 讓新增幣別只需修改配置文件，無需更動到相關依賴的類
+
+工廠類
+- OrderFactory 內使用到了 CurrencyService，使得幣別發生變化，無需更動到工廠本身
+
+新增幣別如 EUR 只需：
+- 創建 OrderEUR.php
+- 增加 EUR 到 config/currencies.php
+
+## LSP
+
+模型
+- OrderTWD, OrderUSD 因為都繼承自 Illuminate\Database\Eloquent\Model 且沒有行為上的變動故可以互相替換，而不改變操作行為
+
+服務類
+- CurrencyService 實作了 CurrencyServiceInterface 介面，可以在任何依賴於 CurrencyServiceInterface 的地方做替換使用
+
+## DIP
+
+OrderRequest, OrderFactory, ProcessOrder 等類別都依賴 CurrencyServiceInterface，而不是特定的 CurrencyService
+
+AppServiceProvider.php 中，將 CurrencyServiceInterface 綁定到了具體的 CurrencyService 實現，客戶端無需關心特定的實作細節。
+
+OrderController 和 ProcessOrder 透過建構函式註入依賴（如 OrderFactory）
